@@ -1,12 +1,11 @@
 import gi
-import serial
-import json
 gi.require_version('Gtk', '3.0')
-
 from gi.repository import GLib, Gtk
 
+import serial
+import json
 
-class SerialMonitorApp(Gtk.Window):
+class TreadmillMonitorApp(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Treadmill")
         self.set_border_width(10)
@@ -18,8 +17,8 @@ class SerialMonitorApp(Gtk.Window):
 
         # Labels for data
         self.rpm_label = Gtk.Label(label="RPM: N/A")
-        self.distance_label = Gtk.Label(label="Distance: N/A")
-        self.velocity_label = Gtk.Label(label="Velocity: N/A")
+        self.distance_label = Gtk.Label(label="Distance: N/A km")  # Added units here
+        self.velocity_label = Gtk.Label(label="Velocity: N/A km/h")  # Added units here
         vbox.pack_start(self.rpm_label, True, True, 0)
         vbox.pack_start(self.distance_label, True, True, 0)
         vbox.pack_start(self.velocity_label, True, True, 0)
@@ -35,7 +34,7 @@ class SerialMonitorApp(Gtk.Window):
             line = self.ser.readline().decode('utf-8').strip()
             try:
                 data = json.loads(line)
-                self.rpm_label.set_text(f"RPM: {data.get('rpm', 'N/A')} rpm")
+                self.rpm_label.set_text(f"RPM: {data.get('rpm', 'N/A')}")
                 self.distance_label.set_text(f"Distance: {data.get('distance', 'N/A')} km")
                 self.velocity_label.set_text(f"Velocity: {data.get('velocity', 'N/A')} km/h")
             except json.JSONDecodeError:
@@ -43,7 +42,7 @@ class SerialMonitorApp(Gtk.Window):
         return True  # Continue calling this function
 
 def main():
-    app = SerialMonitorApp()
+    app = TreadmillMonitorApp()
     app.connect("destroy", Gtk.main_quit)
     app.show_all()
     Gtk.main()
