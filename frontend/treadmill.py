@@ -17,17 +17,26 @@ class TreadmillMonitorApp(Gtk.Window):
 
         # Labels for data
         self.rpm_label = Gtk.Label(label="RPM: N/A")
-        self.distance_label = Gtk.Label(label="Distance: N/A km")  # Added units here
-        self.velocity_label = Gtk.Label(label="Velocity: N/A km/h")  # Added units here
+        self.distance_label = Gtk.Label(label="Distance: N/A km")
+        self.velocity_label = Gtk.Label(label="Velocity: N/A km/h")
         vbox.pack_start(self.rpm_label, True, True, 0)
         vbox.pack_start(self.distance_label, True, True, 0)
         vbox.pack_start(self.velocity_label, True, True, 0)
+
+        # Reset button
+        self.reset_button = Gtk.Button(label="Reset distance")
+        self.reset_button.connect("clicked", self.send_reset_command)
+        vbox.pack_start(self.reset_button, True, True, 0)
 
         # Serial port setup
         self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
         
         # GLib timeout to read data every 1000 milliseconds (1 second)
         GLib.timeout_add(1000, self.read_serial_data)
+
+    def send_reset_command(self, button):
+        # Send the reset command over serial
+        self.ser.write(b'reset\n')
 
     def read_serial_data(self):
         if self.ser.in_waiting > 0:
