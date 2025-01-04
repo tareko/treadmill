@@ -13,16 +13,34 @@ class TreadmillMonitorApp(Gtk.Window):
     def __init__(self, dev_mode=False):
         Gtk.Window.__init__(self, title="Treadmill")
         self.set_border_width(10)
-        self.set_default_size(300, 250)  # Ensure there's enough space for the layout
+        self.set_default_size(300, 300)
         self.dev_mode = dev_mode
 
         # Main layout box
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self.add(hbox)
 
-        # Vertical box for labels, entry, and button
+        # Box for incline controls, expanded vertically
+        incline_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        hbox.pack_start(incline_box, False, True, 0)
+
+        # Button for increasing incline
+        up_button = Gtk.Button(label="↑")
+        up_button.connect("clicked", self.send_incline_command, "up")
+        incline_box.pack_start(up_button, True, True, 0)
+
+        # Incline label
+        incline_label = Gtk.Label(label="Incline")
+        incline_box.pack_start(incline_label, True, True, 0)
+
+        # Button for decreasing incline
+        down_button = Gtk.Button(label="↓")
+        down_button.connect("clicked", self.send_incline_command, "down")
+        incline_box.pack_start(down_button, True, True, 0)
+
+        # Vertical box for other controls
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        hbox.pack_start(vbox, True, True, 0)  # Add vbox to hbox first for left side
+        hbox.pack_start(vbox, True, True, 0)
 
         # Labels for data
         self.rpm_label = Gtk.Label(label="RPM: N/A")
@@ -32,11 +50,11 @@ class TreadmillMonitorApp(Gtk.Window):
         vbox.pack_start(self.distance_label, True, True, 0)
         vbox.pack_start(self.velocity_label, True, True, 0)
 
-        # Label and Text entry for speed
+        # Speed control entry
         speed_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         speed_label = Gtk.Label(label="Speed:")
         self.speed_entry = Gtk.Entry()
-        self.speed_entry.set_text("{:.1f}".format(0.0))  # Set to 0.0 initially
+        self.speed_entry.set_text("{:.1f}".format(0.0))
         self.speed_entry.connect("activate", self.on_speed_entry_activate)
         speed_box.pack_start(speed_label, False, False, 0)
         speed_box.pack_start(self.speed_entry, True, True, 0)
@@ -51,24 +69,34 @@ class TreadmillMonitorApp(Gtk.Window):
         self.speed_adjustment = Gtk.Adjustment(value=0.0, lower=0.0, upper=15.0, step_increment=0.1)
         self.speed_slider = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.speed_adjustment)
         self.speed_slider.set_digits(1)
-        self.speed_slider.set_value_pos(Gtk.PositionType.BOTTOM)  # Position the value label at the bottom
-        self.speed_slider.set_inverted(True)  # Invert the slider so zero is at the bottom and max is at the top
+        self.speed_slider.set_value_pos(Gtk.PositionType.BOTTOM)
+        self.speed_slider.set_inverted(True)
         self.speed_slider.connect("value-changed", self.on_speed_changed)
-        hbox.pack_end(self.speed_slider, False, False, 0)  # Pack the slider at the end for the right side
+        hbox.pack_end(self.speed_slider, False, False, 0)
 
         # Serial port setup if not in developer mode
         if not self.dev_mode and serial is not None:
             self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-        
-        # GLib timeout to read data every 1000 milliseconds (1 second)
+
+        # GLib timeout to read data
         GLib.timeout_add(1000, self.read_serial_data)
 
-    def send_json_speed(self, speed):
-        data = json.dumps({"velocity": speed})
+    def send_json_packet(self, data):
         if self.dev_mode:
             print(f"Sending JSON packet in dev mode: {data}")
         else:
             self.ser.write(data.encode('utf-8') + b'\n')
+
+    def send_json_speed(self, speed):
+        data = json.dumps({"velocity": speed})
+        if self.dev_mode:
+            print(f"Sending JSON speed packet in dev mode: {data}")
+        else:
+            self.ser.write(data.encode('utf-8') + b'\n')
+
+    def send_incline_command(self, button, direction):
+        data = json.dumps({"incline": direction})
+        self.send_json_packet(data)
 
     def on_speed_changed(self, scale):
         speed = self.speed_adjustment.get_value()
