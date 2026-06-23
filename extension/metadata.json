@@ -1,0 +1,7 @@
+{
+  "name": "Treadmill Monitor",
+  "description": "Display treadmill velocity or distance in the GNOME top panel",
+  "uuid": "treadmill-velocity@local",
+  "shell-version": ["50"],
+  "version": 2
+}
